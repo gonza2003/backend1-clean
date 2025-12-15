@@ -1,140 +1,65 @@
-📦 Entrega N°1 – API de Productos y Carritos
+📦 Entrega N°2 – API de Productos y Carritos + Handlebars + WebSockets
 
-Servidor desarrollado en Node.js + Express con persistencia en archivos JSON.
-Permite gestionar productos y carritos mediante endpoints REST.
+Servidor Node.js + Express con persistencia en archivos JSON, vistas con Handlebars y actualización en tiempo real mediante Socket.io.
 
 🚀 Cómo iniciar el servidor
+1) Instalar dependencias:
+   npm install
+2) Iniciar el servidor (entrypoint: server.js):
+   npm start
+Servidor disponible en http://localhost:8080
 
-Instalar dependencias:
-
-npm install
-
-
-Iniciar el servidor:
-
-npm start
-
-
-El servidor se ejecuta en:
-
-http://localhost:8080
-
-📁 Estructura del proyecto
+📁 Estructura del proyecto (resumen)
 /managers
-  ├─ ProductManager.js
-  └─ CartManager.js
-
+  ├─ product-manager.js
+  └─ cart-manager.js
 /routes
   ├─ products.router.js
-  └─ carts.router.js
-
+  ├─ carts.router.js
+  └─ views-router.js
+/views
+  ├─ home.handlebars
+  ├─ realTimeProducts.handlebars
+  └─ layouts/main.handlebars
+/public
 /data
   ├─ products.json
   └─ carts.json
-
-index.js
+server.js
 README.md
 package.json
 
 🛒 Endpoints de Productos (/api/products)
-✔ GET /
-
-Lista todos los productos.
-
-✔ GET /:pid
-
-Muestra un producto específico por ID.
-
-✔ POST /
-
-Crea un producto nuevo.
-El id se autogenera.
-
-Body ejemplo:
-
-{
-  "title": "Pizza Muzzarella",
-  "description": "Pizza grande",
-  "code": "PZ001",
-  "price": 1500,
-  "status": true,
-  "stock": 10,
-  "category": "pizzas",
-  "thumbnails": []
-}
-
-✔ PUT /:pid
-
-Actualiza un producto (excepto el ID).
-
-✔ DELETE /:pid
-
-Elimina un producto por ID.
+✔ GET /              → lista todos los productos
+✔ GET /:pid          → obtiene un producto por ID
+✔ POST /             → crea un producto (id autogenerado) y emite actualización vía sockets
+✔ PUT /:pid          → actualiza un producto (excepto id)
+✔ DELETE /:pid       → elimina un producto y emite actualización vía sockets
 
 🛍 Endpoints de Carritos (/api/carts)
-✔ POST /
+✔ POST /                  → crea un carrito vacío
+✔ GET /:cid               → devuelve productos del carrito
+✔ POST /:cid/product/:pid → agrega producto (incrementa quantity si existe)
 
-Crea un carrito nuevo vacío.
-El id es autogenerado.
+👀 Vistas con Handlebars
+- GET /                 → `home.handlebars`: listado completo renderizado server-side.
+- GET /realtimeproducts → `realTimeProducts.handlebars`: listado que se actualiza en vivo.
 
-✔ GET /:cid
+🔌 WebSockets (Socket.io)
+- El servidor emite `products` con la lista completa al conectar y tras crear/eliminar.
+- La vista `realTimeProducts` escucha `products` y refresca el `<ul>` sin recargar.
+- El formulario en `realTimeProducts` envía eventos `newProduct` y `deleteProduct`.
 
-Muestra los productos del carrito.
-
-✔ POST /:cid/product/:pid
-
-Agrega un producto al carrito.
-Si ya existe → incrementa quantity.
-
-🧪 Cómo probar la API
-🔹 1) Iniciar el servidor
-npm start
-
-🔹 2) Probar desde Postman o Thunder Client (VSCode)
-
-Ejemplos:
-
-➤ Listar productos:
-
-GET
-
-http://localhost:8080/api/products
-
-➤ Crear producto:
-
-POST
-
-http://localhost:8080/api/products
-
-
-Body JSON:
-
-{
-  "title": "Coca Cola",
-  "description": "354 ml",
-  "code": "CK001",
-  "price": 900,
-  "status": true,
-  "stock": 30,
-  "category": "bebidas"
-}
-
-➤ Crear carrito:
-
-POST
-
-http://localhost:8080/api/carts
-
-➤ Agregar producto al carrito:
-
-POST
-
-http://localhost:8080/api/carts/{cid}/product/{pid}
+🧪 Cómo probar
+1) Ejecuta `npm start`.
+2) Abre `http://localhost:8080/` para ver el listado inicial renderizado por Handlebars.
+3) Abre `http://localhost:8080/realtimeproducts` en una o varias pestañas:
+   - Completa el form y envía → se agrega y refresca en todas las pestañas.
+   - Usa el botón Eliminar → se borra y refresca en todas las pestañas.
+4) También puedes probar la API REST con Postman/Thunder Client usando los endpoints anteriores.
 
 🧷 Notas
+- Persistencia en `data/products.json` y `data/carts.json`.
+- No enviar `id` en el body al crear productos o carritos.
+- Layout principal: `views/layouts/main.handlebars`.
 
-La persistencia se realiza en products.json y carts.json.
-
-No se debe enviar el id del producto o carrito desde el body.
-
-No se implementa interfaz visual; la prueba se hace por Postman o Thunder Client.
