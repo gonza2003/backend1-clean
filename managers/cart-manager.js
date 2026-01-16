@@ -1,65 +1,69 @@
-const fs = require('fs').promises;
-const path = require('path');
+const cartModel = require('../models/cart.model');
 
 class CartManager {
-  constructor(filename = 'data/carts.json') {
-    this.path = path.resolve(filename);
-    this._ensureFile();
-  }
-
-  async _ensureFile() {
-    try {
-      await fs.access(this.path);
-    } catch {
-      await fs.writeFile(this.path, JSON.stringify([]));
-    }
-  }
-
-  async _readFile() {
-    const data = await fs.readFile(this.path, 'utf-8');
-    return JSON.parse(data);
-  }
-
-  async _writeFile(items) {
-    await fs.writeFile(this.path, JSON.stringify(items, null, 2));
-  }
-
-  _generateId() {
-    return Date.now().toString() + Math.random().toString(36).slice(2, 8);
-  }
-
+  // Crear un carrito nuevo vacío
   async createCart() {
-    const carts = await this._readFile();
-    const id = this._generateId();
-    const newCart = { id, products: [] };
-    carts.push(newCart);
-    await this._writeFile(carts);
-    return newCart;
+  console.log("Intentando crear carrito en MongoDB..."); // Log de control
+  try {
+    const nuevoCarrito = await cartModel.create({ products: [] });
+    console.log("Carrito creado con éxito:", nuevoCarrito);
+    return nuevoCarrito;
+  } catch (error) {
+    console.error("Error específico dentro del Manager:", error);
+    throw error; // Re-lanzamos el error para que el router lo atrape
   }
+}
 
+  // Buscar un carrito y "llenar" los datos de los productos (Populate)
   async getCartById(cid) {
-    const carts = await this._readFile();
-    return carts.find(c => String(c.id) === String(cid)) || null;
+    // .populate('products.product') transforma los IDs en el objeto completo del producto 📦
+    return await cartModel.findById(cid).populate('products.product').lean();
   }
 
-  // Agrega producto (por id) incrementando quantity si ya existe
-  async addProductToCart(cid, pid, qty = 1) {
-    const carts = await this._readFile();
-    const idx = carts.findIndex(c => String(c.id) === String(cid));
-    if (idx === -1) return null;
+  // Agregar un producto al carrito
+  // Agregar un producto al carrito
+  async addProductToCart(cid, pid) {
+    // 1. Buscamos el carrito
+    const cart = await cartModel.findById(cid);
+    if (!cart) return null;
 
-    const cart = carts[idx];
-    const prodIndex = cart.products.findIndex(p => String(p.product) === String(pid));
-    if (prodIndex === -1) {
-      cart.products.push({ product: String(pid), quantity: Number(qty) });
+    // 2. ¿El producto ya está en el carrito? 🧐
+    // Usamos esta lógica para comparar correctamente IDs, tengan Populate o no
+    const productInCart = cart.products.find(p => {
+      const existingId = p.product._id ? p.product._id.toString() : p.product.toString();
+      return existingId === pid;
+    });
+
+    if (productInCart) {
+      // Si ya existe, solo aumentamos la cantidad 📈
+      productInCart.quantity++;
     } else {
-      cart.products[prodIndex].quantity = Number(cart.products[prodIndex].quantity) + Number(qty);
+      // Si es nuevo, lo agregamos al array 🆕
+      cart.products.push({ product: pid, quantity: 1 });
     }
 
-    carts[idx] = cart;
-    await this._writeFile(carts);
-    return cart;
+    // 3. Guardamos los cambios en la base de datos 💾
+    return await cart.save();
   }
+  
+  // Borrar un producto específico del carrito
+async removeProductFromCart(cid, pid) {
+  // Usamos $pull para "tirar" o sacar el elemento del array que coincida con el ID
+  return await cartModel.findByIdAndUpdate(
+    cid,
+    { $pull: { products: { product: pid } } },
+    { new: true }
+  );
+}
+
+// Vaciar el carrito (dejar el array de productos vacío)
+async clearCart(cid) {
+  return await cartModel.findByIdAndUpdate(
+    cid,
+    { $set: { products: [] } },
+    { new: true }
+  );
+}
 }
 
 module.exports = CartManager;

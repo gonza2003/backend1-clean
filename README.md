@@ -1,65 +1,70 @@
-📦 Entrega N°2 – API de Productos y Carritos + Handlebars + WebSockets
+🛒 Proyecto Backend - Entrega Final (API de E-commerce)
+Este proyecto es una API REST construida con Node.js y Express, diseñada para gestionar productos y carritos de compra, ahora con persistencia total en la nube utilizando MongoDB Atlas.
 
-Servidor Node.js + Express con persistencia en archivos JSON, vistas con Handlebars y actualización en tiempo real mediante Socket.io.
+✨ Características Principales
+Persistencia de Datos: Migración completa de FileSystem a MongoDB Atlas.
 
-🚀 Cómo iniciar el servidor
-1) Instalar dependencias:
-   npm install
-2) Iniciar el servidor (entrypoint: server.js):
-   npm start
-Servidor disponible en http://localhost:8080
+Gestión de Productos: CRUD completo para la administración de inventario.
 
-📁 Estructura del proyecto (resumen)
-/managers
-  ├─ product-manager.js
-  └─ cart-manager.js
-/routes
-  ├─ products.router.js
-  ├─ carts.router.js
-  └─ views-router.js
-/views
-  ├─ home.handlebars
-  ├─ realTimeProducts.handlebars
-  └─ layouts/main.handlebars
-/public
-/data
-  ├─ products.json
-  └─ carts.json
-server.js
-README.md
-package.json
+Sistema de Carritos: Creación de carritos y gestión de productos dentro de los mismos.
 
-🛒 Endpoints de Productos (/api/products)
-✔ GET /              → lista todos los productos
-✔ GET /:pid          → obtiene un producto por ID
-✔ POST /             → crea un producto (id autogenerado) y emite actualización vía sockets
-✔ PUT /:pid          → actualiza un producto (excepto id)
-✔ DELETE /:pid       → elimina un producto y emite actualización vía sockets
+Lógica de Cantidades: El sistema detecta si un producto ya existe en el carrito y aumenta su quantity en lugar de duplicarlo.
 
-🛍 Endpoints de Carritos (/api/carts)
-✔ POST /                  → crea un carrito vacío
-✔ GET /:cid               → devuelve productos del carrito
-✔ POST /:cid/product/:pid → agrega producto (incrementa quantity si existe)
+Populate: Integración de .populate() para obtener información detallada de los productos al consultar un carrito.
 
-👀 Vistas con Handlebars
-- GET /                 → `home.handlebars`: listado completo renderizado server-side.
-- GET /realtimeproducts → `realTimeProducts.handlebars`: listado que se actualiza en vivo.
+WebSockets: Actualización de productos en tiempo real mediante Socket.io.
 
-🔌 WebSockets (Socket.io)
-- El servidor emite `products` con la lista completa al conectar y tras crear/eliminar.
-- La vista `realTimeProducts` escucha `products` y refresca el `<ul>` sin recargar.
-- El formulario en `realTimeProducts` envía eventos `newProduct` y `deleteProduct`.
+Motor de Plantillas: Vistas dinámicas renderizadas con Handlebars.
 
-🧪 Cómo probar
-1) Ejecuta `npm start`.
-2) Abre `http://localhost:8080/` para ver el listado inicial renderizado por Handlebars.
-3) Abre `http://localhost:8080/realtimeproducts` en una o varias pestañas:
-   - Completa el form y envía → se agrega y refresca en todas las pestañas.
-   - Usa el botón Eliminar → se borra y refresca en todas las pestañas.
-4) También puedes probar la API REST con Postman/Thunder Client usando los endpoints anteriores.
+🛠️ Tecnologías Utilizadas
+Node.js & Express (Servidor)
 
-🧷 Notas
-- Persistencia en `data/products.json` y `data/carts.json`.
-- No enviar `id` en el body al crear productos o carritos.
-- Layout principal: `views/layouts/main.handlebars`.
+MongoDB & Mongoose (Base de datos y modelado)
 
+Socket.io (Comunicación en tiempo real)
+
+Handlebars (Vistas)
+
+Postman (Pruebas de API)
+
+📂 Estructura del Proyecto
+/models: Esquemas de Mongoose (cart.model.js, product.model.js).
+
+/routes: Definición de endpoints para productos, carritos y vistas.
+
+/managers: Clases para manejar la lógica de negocio y comunicación con la DB.
+
+/public: Archivos estáticos (JS del lado del cliente, CSS).
+
+/views: Plantillas de Handlebars.
+
+🚀 Endpoints Principales
+Productos (/api/products)
+GET /: Lista todos los productos.
+
+POST /: Agrega un nuevo producto.
+
+Carritos (/api/carts)
+POST /: Crea un nuevo carrito vacío.
+
+GET /:cid: Muestra los productos de un carrito (con populate).
+
+POST /:cid/product/:pid: Agrega un producto al carrito (suma cantidad si ya existe).
+
+DELETE /:cid/product/:pid: Elimina un producto específico del carrito.
+
+DELETE /:cid: Vacía el carrito por completo.
+
+⚙️ Instalación y Uso
+Clonar el repositorio.
+
+Ejecutar npm install para instalar dependencias.
+
+Configurar la conexión a MongoDB en el archivo database.js.
+
+Iniciar el servidor con npm start.
+
+El servidor correrá en http://localhost:8080.
+
+💡 Notas del Desarrollador
+En esta entrega se priorizó la robustez de la base de datos. Se implementó una lógica avanzada en el CartManager para asegurar que la comparación de IDs funcione correctamente incluso cuando los documentos están populados, evitando inconsistencias en los datos.

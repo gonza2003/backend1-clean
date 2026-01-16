@@ -1,84 +1,30 @@
-const fs = require('fs').promises;
-const path = require('path');
+const productModel = require('../models/product.model');
 
 class ProductManager {
-  constructor(filename = 'data/products.json') {
-    this.path = path.resolve(filename);
-    this._ensureFile();
-  }
+  constructor() {}
 
-  async _ensureFile() {
-    try {
-      await fs.access(this.path);
-    } catch {
-      // Si no existe, crearlo con array vacío
-      await fs.writeFile(this.path, JSON.stringify([]));
-    }
-  }
-
-  async _readFile() {
-    const data = await fs.readFile(this.path, 'utf-8');
-    return JSON.parse(data);
-  }
-
-  async _writeFile(items) {
-    await fs.writeFile(this.path, JSON.stringify(items, null, 2));
-  }
-
-  _generateId() {
-    return Date.now().toString() + Math.random().toString(36).slice(2, 8);
-  }
-
-  async getProducts() {
-    return await this._readFile();
-  }
+async getProducts(filter = {}, options = {}) {
+  // paginate recibe: 
+  // 1. El filtro (ej: { category: 'celulares' })
+  // 2. Las opciones (ej: { limit: 10, page: 1 })
+  return await productModel.paginate(filter, options);
+}
 
   async getProductById(pid) {
-    const products = await this._readFile();
-    return products.find(p => String(p.id) === String(pid)) || null;
+    return await productModel.findById(pid);
   }
 
   async addProduct(productData) {
-    const products = await this._readFile();
-
-    // Generar id automáticamente
-    const id = this._generateId();
-
-    const newProduct = {
-      id,
-      title: productData.title || '',
-      description: productData.description || '',
-      code: productData.code || '',
-      price: Number(productData.price) || 0,
-      status: productData.status === undefined ? true : Boolean(productData.status),
-      stock: Number(productData.stock) || 0,
-      category: productData.category || '',
-      thumbnails: Array.isArray(productData.thumbnails) ? productData.thumbnails : []
-    };
-
-    products.push(newProduct);
-    await this._writeFile(products);
-    return newProduct;
+    // MongoDB crea el ID y valida los campos automáticamente según tu Schema 📝
+    return await productModel.create(productData);
   }
 
   async updateProduct(pid, updates) {
-    const products = await this._readFile();
-    const idx = products.findIndex(p => String(p.id) === String(pid));
-    if (idx === -1) return null;
-
-    // No permitir cambiar el id
-    const { id, ...rest } = updates;
-    products[idx] = { ...products[idx], ...rest };
-    await this._writeFile(products);
-    return products[idx];
+    return await productModel.findByIdAndUpdate(pid, updates, { new: true });
   }
 
   async deleteProduct(pid) {
-    const products = await this._readFile();
-    const filtered = products.filter(p => String(p.id) !== String(pid));
-    if (filtered.length === products.length) return false;
-    await this._writeFile(filtered);
-    return true;
+    return await productModel.findByIdAndDelete(pid);
   }
 }
 
